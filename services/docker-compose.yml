@@ -1,0 +1,103 @@
+services:
+
+  web:
+    image: nginx:latest
+    container_name: men-web
+    ports:
+      - "80:80"
+    volumes:
+      - ./web/html:/usr/share/nginx/html
+      - ./web/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      red-web:
+        ipv4_address: 172.20.1.10
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: men-db
+    environment:
+      MYSQL_ROOT_PASSWORD: men_root_2024
+      MYSQL_DATABASE: men_db
+      MYSQL_USER: men_user
+      MYSQL_PASSWORD: men_pass_2024
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      red-db:
+        ipv4_address: 172.20.2.10
+    restart: unless-stopped
+
+  ssh:
+    image: lscr.io/linuxserver/openssh-server:latest
+    container_name: men-ssh
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Bogota
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=men_ssh_2024
+      - USER_NAME=admin
+    ports:
+      - "2222:2222"
+    networks:
+      red-admin:
+        ipv4_address: 172.20.3.10
+    restart: unless-stopped
+
+  ntp:
+    image: cturra/ntp:latest
+    container_name: men-ntp
+    ports:
+      - "123:123/udp"
+    environment:
+      - NTP_SERVERS=pool.ntp.org
+    networks:
+      red-admin:
+        ipv4_address: 172.20.3.11
+    restart: unless-stopped
+
+  nfs:
+    image: erichough/nfs-server:latest
+    container_name: men-nfs
+    privileged: true
+    environment:
+      - NFS_EXPORT_0=/exports 172.20.4.0/24(rw,sync,no_subtree_check)
+    volumes:
+      - nfs-data:/exports
+    ports:
+      - "2049:2049"
+    networks:
+      red-archivos:
+        ipv4_address: 172.20.4.10
+    restart: unless-stopped
+
+networks:
+  red-web:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+
+  red-db:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24
+
+  red-admin:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.3.0/24
+
+  red-archivos:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.4.0/24
+
+volumes:
+  db-data:
+  nfs-data:
