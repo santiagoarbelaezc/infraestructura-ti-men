@@ -26,3 +26,4 @@ RUNNING=$(docker ps --filter "status=running" --format "{{.Names}}" | wc -l)
 echo -e "➔ Contenedores activos detectados: ${GREEN}$RUNNING${NC} (Esperados: 6)" | tee -a $LOG
 
 echo -e "${GREEN}[$FECHA] ✅ Despliegue completado con éxito.${NC}" | tee -a $LOG
+
